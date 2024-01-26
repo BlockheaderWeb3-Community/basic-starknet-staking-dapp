@@ -481,7 +481,7 @@ mod test {
 
 
     mod Errors {
-        const INVALID_DECIMALS: felt252 = 'Invalid decimals';
+        const INVALID_DECIMALS: felt252 = 'Invalid decimal';
         const UNMATCHED_SUPPLY: felt252 = 'Unmatched supply';
         const INVALID_BALANCE: felt252 = 'Invalid balance';
         const NOT_ALLOWED: felt252 = 'Not allowed';
