@@ -82,6 +82,7 @@ mod BWCStakingContract {
     mod Errors {
         const INSUFFICIENT_FUND: felt252 = 'Insufficient fund';
         const INSUFFICIENT_BALANCE: felt252 = 'Insufficient balance';
+        
     }
 
     #[external(v0)]
@@ -193,18 +194,18 @@ impl checkBalanceTrait of checkBalance {
     }
 }
 
-// #[generate_trait]
-// impl updateStakeDetailTrait of updateStakeDetail {
-//     fn updateStakeDetail(self: ContractState, account: ContractAddress, amount: u256, status: bool, timeStaked: u64) -> bool {
-//         let caller = get_caller_address();
-//         let mut stake: StakeDetail = self.staker.read(caller);
-//         stake.amount = amount;
-//         stake.status = status;
-//         stake.timeStaked = timeStaked;
-//         self.staker.write(caller, stake);
-//         return true;
-//     }
-// }
+#[generate_trait]
+impl updateStakeDetailTrait of updateStakeDetail {
+    fn updateStakeDetail(ref self: ContractState, account: ContractAddress, amount: u256, status: bool, timeStaked: u64) -> bool {
+        let caller = get_caller_address();
+        let mut stake: StakeDetail = self.staker.read(caller);
+        stake.amount = amount;
+        stake.status = status;
+        stake.timeStaked = timeStaked;
+        self.staker.write(caller, stake);
+        return true;
+    }
+}
 
 
 }
