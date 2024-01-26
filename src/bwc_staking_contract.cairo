@@ -82,6 +82,7 @@ mod BWCStakingContract {
     mod Errors {
         const INSUFFICIENT_FUND: felt252 = 'Insufficient fund';
         const INSUFFICIENT_BALANCE: felt252 = 'Insufficient balance';
+        
     }
 
     #[external(v0)]
@@ -168,21 +169,43 @@ mod BWCStakingContract {
     // }
     }
 
-
-    #[generate_trait]
-    impl calculateRewardTrait of calculateReward {
-        fn calculateReward(self: ContractState, account: ContractAddress) -> u256 {
-            let caller = get_caller_address();
-            let stake_status: bool = self.staker.read(caller).status;
-            let stake_amount = self.staker.read(caller).amount;
-            let stake_time: u64 = self.staker.read(caller).timeStaked;
-            if stake_status == false {
-                return 0;
-            }
-            let reward_per_month = (stake_amount * 10);
-            let time = get_block_timestamp() - stake_time;
-            let reward = (reward_per_month * time.into() * 1000) / minStakeTime.into();
-            return reward;
+#[generate_trait]
+impl calculateRewardTrait of calculateReward {
+    fn calculateReward(self: ContractState, account: ContractAddress) -> u256 {
+        let caller = get_caller_address();
+        let stake_status: bool = self.staker.read(caller).status;
+        let stake_amount = self.staker.read(caller).amount;
+        let stake_time: u64 = self.staker.read(caller).timeStaked;
+        if stake_status == false {
+            return 0;
         }
+        let reward_per_month = (stake_amount * 10);
+        let time = get_block_timestamp() - stake_time;
+        let reward = (reward_per_month * time.into() * 1000) / minStakeTime.into();
+        return reward;
     }
+}
+
+#[generate_trait]
+impl checkBalanceTrait of checkBalance {
+    fn checkBalance(self: ContractState, account: ContractAddress) -> u256 {
+        let caller = get_caller_address();
+        return self.staker.read(caller).amount;
+    }
+}
+
+#[generate_trait]
+impl updateStakeDetailTrait of updateStakeDetail {
+    fn updateStakeDetail(ref self: ContractState, account: ContractAddress, amount: u256, status: bool, timeStaked: u64) -> bool {
+        let caller = get_caller_address();
+        let mut stake: StakeDetail = self.staker.read(caller);
+        stake.amount = amount;
+        stake.status = status;
+        stake.timeStaked = timeStaked;
+        self.staker.write(caller, stake);
+        return true;
+    }
+}
+
+
 }
