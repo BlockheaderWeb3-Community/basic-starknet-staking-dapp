@@ -100,7 +100,7 @@ mod BWCStakingContract {
         self.receipt_token_address.write(receipt_token_address);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl IStakeImpl of super::IStake<ContractState> {
         // Function allows caller to stake their token
         // @amount: Amount of token to stake
@@ -233,7 +233,7 @@ mod BWCStakingContract {
         }
     }
 
-    #[external(v0)]
+
     #[generate_trait]
     impl Utility of UtilityTrait {
         // fn calculate_reward(self: ContractState, account: ContractAddress) -> u256 {
@@ -271,11 +271,11 @@ mod BWCStakingContract {
         }
     }
 }
-
 // TODO: 
 // 1. Make error messages more descriptive
 // 2. Add a util function to check if user has staked at any point in time
 // 3. Add a util function to check amount a user staked
 // 4. Convert non-custom errors to custom errors
 // 5. Add util function to check the last time a user staked
+
 

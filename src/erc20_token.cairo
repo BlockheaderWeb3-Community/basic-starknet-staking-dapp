@@ -62,26 +62,27 @@ mod ERC20 {
         ref self: ContractState,
         name_: felt252,
         symbol_: felt252,
-        decimals_: u8,
-        initial_supply: u256,
-        recipient: ContractAddress,
-        owner_: ContractAddress
+        decimals_: u8, // initial_supply: u256,
+    // recipient: ContractAddress,
+    // owner_: ContractAddress
     ) {
-        assert(!recipient.is_zero(), 'ERC20: mint to the 0 address');
-        assert(!owner_.is_zero(), 'ERC20: owner set to 0 address');
+        // assert(!recipient.is_zero(), 'ERC20: mint to the 0 address');
+        // assert(!owner_.is_zero(), 'ERC20: owner set to 0 address');
 
         self.name.write(name_);
         self.symbol.write(symbol_);
         self.decimals.write(decimals_);
-        self.total_supply.write(initial_supply);
-        self.balances.write(recipient, initial_supply);
-        self.owner.write(owner_);
+        self.total_supply.write(1000000);
+        self.balances.write(get_caller_address(), 1000000);
+        self.owner.write(get_caller_address());
 
         self
             .emit(
                 Event::Transfer(
                     Transfer {
-                        from: contract_address_const::<0>(), to: recipient, value: initial_supply
+                        from: contract_address_const::<0>(),
+                        to: get_caller_address(),
+                        value: 1000000
                     }
                 )
             );
