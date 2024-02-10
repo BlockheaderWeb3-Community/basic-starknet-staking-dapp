@@ -77,6 +77,7 @@ mod BWCStakingContract {
     /////////////////
     mod Errors {
         const INSUFFICIENT_FUND: felt252 = 'STAKE: Insufficient fund';
+        const INVALID_WITHDRAW_TIME: felt252 = 'Not yet time to withdraw';
         const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
         const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
         const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
@@ -198,7 +199,7 @@ mod BWCStakingContract {
             assert(
                 amount <= stake_amount, Errors::WITHDRAW_AMOUNT_NOT_ALLOWED
             ); // Staker cannot withdraw more than staked amount
-            assert(self.is_time_to_withdraw(stake_time), 'Not yet time to withdraw');
+            assert(self.is_time_to_withdraw(stake_time), Errors::INVALID_WITHDRAW_TIME);
             assert(
                 reward_contract.balance_of(address_this) >= amount,
                 'Not enough reward token to send'
