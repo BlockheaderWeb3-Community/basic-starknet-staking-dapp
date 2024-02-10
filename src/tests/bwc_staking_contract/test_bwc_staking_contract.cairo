@@ -53,7 +53,6 @@ fn deploy_contract() -> (ContractAddress, ContractAddress, ContractAddress, Cont
     ];
 
     let staking_contract_address = staking_contract_class.deploy(@stake_calldata).unwrap();
-
     (
         staking_contract_address,
         bwc_contract_address,
@@ -141,6 +140,32 @@ fn test_amount_not_allowed() {
 }
 
 
+#[test]
+fn test_new_stake_detail_balance() {
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    let prev_stake: u256 = stake_dispatcher.get_stake_balance();
+    stake_dispatcher.stake(6);
+    assert(stake_dispatcher.get_stake_balance() == (prev_stake + 6), Errors::WRONG_STAKE_BALANCE);
+}
+
 
 
 
@@ -178,4 +203,5 @@ mod Account {
         const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
         const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
         const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
+        const WRONG_STAKE_BALANCE: felt252 = 'STAKE: Wrong stake balance';
     }

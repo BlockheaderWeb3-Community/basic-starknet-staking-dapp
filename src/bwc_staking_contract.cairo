@@ -4,6 +4,7 @@ use starknet::ContractAddress;
 trait IStake<TContractState> {
     fn stake(ref self: TContractState, amount: u256) -> bool;
     fn withdraw(ref self: TContractState, amount: u256) -> bool;
+    fn get_stake_balance(self: @TContractState) -> u256;
 }
 
 #[starknet::contract]
@@ -163,6 +164,10 @@ mod BWCStakingContract {
                     )
                 );
             true
+        }
+
+        fn get_stake_balance(self: @ContractState) -> u256 {
+            self.staker.read(get_caller_address()).amount
         }
 
         // Function allows caller to withdraw their staked token and get rewarded
