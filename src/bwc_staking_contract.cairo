@@ -86,7 +86,7 @@ mod BWCStakingContract {
         const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
         const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
         const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
-        const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
+         const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'Withdraw amount not allowed';
     }
 
     #[constructor]
@@ -196,7 +196,7 @@ mod BWCStakingContract {
             let stake_time = stake.time_staked;
 
             assert(
-                amount <= stake_amount, 'Withdraw amt > than stake amt'
+                amount <= stake_amount, Errors::WITHDRAW_AMOUNT_NOT_ALLOWED
             ); // Staker cannot withdraw more than staked amount
             assert(self.is_time_to_withdraw(stake_time), 'Not yet time to withdraw');
             assert(
