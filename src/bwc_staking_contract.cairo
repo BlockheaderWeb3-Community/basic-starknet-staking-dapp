@@ -38,7 +38,7 @@ mod BWCStakingContract {
         staker: LegacyMap::<ContractAddress, StakeDetail>,
         bwcerc20_token_address: ContractAddress,
         receipt_token_address: ContractAddress,
-        reward_token_address: ContractAddress
+        reward_token_address: ContractAddress,
     }
 
     //////////////////
@@ -169,6 +169,7 @@ mod BWCStakingContract {
         fn get_stake_balance(self: @ContractState) -> u256 {
             self.staker.read(get_caller_address()).amount
         }
+
 
         // Function allows caller to withdraw their staked token and get rewarded
         // @amount: Amount of token to withdraw
