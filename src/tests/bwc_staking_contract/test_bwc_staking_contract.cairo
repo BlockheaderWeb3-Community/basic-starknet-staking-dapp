@@ -4,13 +4,10 @@ use core::result::ResultTrait;
 use core::option::OptionTrait;
 use basic_staking_dapp::bwc_staking_contract::{IStake, BWCStakingContract, IStakeDispatcher};
 use basic_staking_dapp::erc20_token::{IERC20, ERC20, IERC20Dispatcher};
-use starknet::ContractAddress;
+use starknet::{ContractAddress, get_block_timestamp};
 use starknet::contract_address::contract_address_const;
 use core::array::ArrayTrait;
-use snforge_std::{declare, ContractClassTrait, fs::{FileTrait, read_txt}};
-use snforge_std::{start_prank, stop_prank, CheatTarget};
-
-use snforge_std::PrintTrait;
+use snforge_std::{declare, ContractClassTrait, fs::{FileTrait, read_txt}, start_prank, stop_prank, CheatTarget, start_warp, PrintTrait};
 use core::traits::{Into, TryInto};
 use starknet::syscalls::deploy_syscall;
 use starknet::SyscallResultTrait;
@@ -251,6 +248,37 @@ fn test_invalid_withdrawal_amount() {
     stake_dispatcher.stake(6);
     stake_dispatcher.withdraw(30);
 }
+
+
+#[test]
+#[should_panic(expected: ('Not yet time to withdraw',))]
+fn test_invalid_withdraw_time() {
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, reward_contract_address) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    stake_dispatcher.withdraw(5);
+}
+
+
 
 
 
