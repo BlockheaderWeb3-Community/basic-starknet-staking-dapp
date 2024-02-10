@@ -18,6 +18,7 @@ trait IERC20<TContractState> {
         ref self: TContractState, spender: ContractAddress, subtracted_value: u256
     );
     fn mint(ref self: TContractState, recipient: ContractAddress, amount: u256);
+    fn burn(ref self: TContractState, amount: u256) -> bool;
 }
 
 #[starknet::contract]
@@ -57,14 +58,33 @@ mod ERC20 {
         value: u256,
     }
 
+
+    /////////////////////////
+    //CUSTOM ERRORS
+    //////////////////////////
+    mod Errors {
+        const TRANSFER_ADDRESS_ZERO: felt252 = 'Transfer to zero address';
+        const OWNER_ADDRESS: felt252 = 'Owner cant be zero address';
+        const CALLER_NOT_OWNER: felt252 = 'Caller not owner';
+        const ADDRESS_ZERO: felt252 = 'Adddress zero';
+        const INSUFFICIENT_FUND: felt252 = 'Insufficient fund';
+        const APPROVED_TOKEN: felt252 = 'You have no token approved';
+        const AMOUNT_NOT_ALLOWED: felt252 = 'Amount not allowed';
+        const MSG_SENDER_NOT_OWNER: felt252 = 'Msg_sender not owner';
+        const TRANSFER_FROM_ADDRESS_ZERO: felt252 = 'Transfer from 0';
+        const TRANSFER_TO_ADDRESS_ZERO: felt252 = 'Transfer to 0';
+        const APPROVE_FROM_ADDRESS_ZERO: felt252 = 'Approve from 0';
+        const APPROVE_TO_ADDRESS_ZERO: felt252 = 'Approve to 0';
+    }
+
     #[constructor]
     fn constructor(
         ref self: ContractState,
         name_: felt252,
         symbol_: felt252,
         decimals_: u8, // initial_supply: u256,
-    // recipient: ContractAddress,
-    // owner_: ContractAddress
+        // recipient: ContractAddress,
+        owner_: ContractAddress
     ) {
         // assert(!recipient.is_zero(), 'ERC20: mint to the 0 address');
         // assert(!owner_.is_zero(), 'ERC20: owner set to 0 address');
@@ -73,17 +93,13 @@ mod ERC20 {
         self.symbol.write(symbol_);
         self.decimals.write(decimals_);
         self.total_supply.write(1000000);
-        self.balances.write(get_caller_address(), 1000000);
-        self.owner.write(get_caller_address());
+        self.balances.write(owner_, 1000000);
+        self.owner.write(owner_);
 
         self
             .emit(
                 Event::Transfer(
-                    Transfer {
-                        from: contract_address_const::<0>(),
-                        to: get_caller_address(),
-                        value: 1000000
-                    }
+                    Transfer { from: contract_address_const::<0>(), to: owner_, value: 1000000 }
                 )
             );
     }
@@ -129,6 +145,10 @@ mod ERC20 {
             amount: u256
         ) {
             let caller = get_caller_address();
+            let my_allowance = self.allowances.read((sender, caller));
+
+            assert(my_allowance > 0, Errors::APPROVED_TOKEN);
+            assert(amount <= my_allowance, Errors::AMOUNT_NOT_ALLOWED);
             self.spend_allowance(sender, caller, amount);
             self.transfer_helper(sender, recipient, amount);
         }
@@ -161,12 +181,20 @@ mod ERC20 {
         fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
             let owner = self.owner.read();
             let caller = get_caller_address();
-
-            assert(owner == caller, 'ERC20: Caller not owner');
-            assert(!recipient.is_zero(), 'ERC20: Mint to zero');
-
-            self.balances.write(recipient, self.balances.read(recipient) + amount);
-            self.total_supply.write(self.total_supply.read() + amount);
+            assert(owner == caller, Errors::CALLER_NOT_OWNER);
+            assert(!recipient.is_zero(), Errors::ADDRESS_ZERO);
+            assert(self.balances.read(self.owner.read()) >= amount, Errors::INSUFFICIENT_FUND);
+            self
+                .balances
+                .write(
+                    self.owner.read(), self.balances.read(owner) - amount
+                ); // subtract amount from caller's balance
+            self
+                .balances
+                .write(
+                    recipient, self.balances.read(recipient) + amount
+                ); // add amount to recipient's balance
+            self.total_supply.write(self.total_supply.read() + amount); 
             self
                 .emit(
                     Event::Transfer(
@@ -175,6 +203,25 @@ mod ERC20 {
                         }
                     )
                 );
+        }
+
+        fn burn(ref self: ContractState, amount: u256) -> bool {
+            let owner = self.owner.read();
+            let caller = get_caller_address();
+
+            // Check if the caller is the owner.
+            assert(owner == caller, Errors::CALLER_NOT_OWNER);
+
+            // Check if the balance of the owner is greater than or equal to the amount to burn.
+            assert(self.balances.read(owner) >= amount, Errors::INSUFFICIENT_FUND);
+
+            // Subtract the amount from the owner's balance.
+            self.balances.write(owner, self.balances.read(owner) - amount);
+
+            // Update the total supply.
+            self.total_supply.write(self.total_supply.read() - amount);
+
+            true
         }
     }
 
