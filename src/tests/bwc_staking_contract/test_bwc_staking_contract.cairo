@@ -166,6 +166,35 @@ fn test_new_stake_detail_balance() {
     assert(stake_dispatcher.get_stake_balance() == (prev_stake + 6), Errors::WRONG_STAKE_BALANCE);
 }
 
+#[test]
+fn test_transfer_stake_token(){
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let prev_stake_contract_balance = bwc_dispatcher.balance_of(staking_contract_address);
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    
+    assert(bwc_dispatcher.allowance(Account::user1(), staking_contract_address) == 4,  Errors::INVALID_ALLOWANCE);
+    assert(bwc_dispatcher.balance_of(staking_contract_address) == prev_stake_contract_balance + 6, Errors::INVALID_BALANCE);
+    stop_prank(CheatTarget::One(staking_contract_address));
+}
+
 
 
 
@@ -204,4 +233,6 @@ mod Account {
         const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
         const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
         const WRONG_STAKE_BALANCE: felt252 = 'STAKE: Wrong stake balance';
+         const INVALID_BALANCE: felt252 = 'Invalid balance';
+               const INVALID_ALLOWANCE: felt252 = 'Invalid allowance';
     }
