@@ -122,7 +122,7 @@ mod BWCStakingContract {
             assert(
                 amount <= bwc_erc20_contract.balance_of(caller), Errors::INSUFFICIENT_FUNDS
             ); // Caller cannot stake more than token balance
-            assert(amount >= 0, Errors::ZERO_AMOUNT); // Cannot stake zero amount
+            assert(amount > 0, Errors::ZERO_AMOUNT); // Cannot stake zero amount
             assert(
                 receipt_contract.balance_of(address_this) >= amount, Errors::LOW_CBWCRT_BALANCE
             ); // Contract must have enough receipt token to transfer out
