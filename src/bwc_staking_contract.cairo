@@ -157,6 +157,7 @@ mod BWCStakingContract {
             //
             // Staker calls the approve function of receipt token contract and approves this contract to transfer out `amount` receipt from staker account
             // Reason for this is to allow this contract withdraw the receipt token before sending back stake tokens
+            //  receipt_contract.approve(address_this, amount);
 
             self
                 .emit(
