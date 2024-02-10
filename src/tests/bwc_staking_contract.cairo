@@ -1,0 +1,1 @@
+mod test_bwc_staking_contract;

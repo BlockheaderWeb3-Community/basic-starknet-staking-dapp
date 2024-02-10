@@ -194,7 +194,7 @@ mod ERC20 {
                 .write(
                     recipient, self.balances.read(recipient) + amount
                 ); // add amount to recipient's balance
-            self.total_supply.write(self.total_supply.read() + amount); 
+            self.total_supply.write(self.total_supply.read() + amount);
             self
                 .emit(
                     Event::Transfer(
