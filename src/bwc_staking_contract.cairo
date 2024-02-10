@@ -4,6 +4,7 @@ use starknet::ContractAddress;
 trait IStake<TContractState> {
     fn stake(ref self: TContractState, amount: u256) -> bool;
     fn withdraw(ref self: TContractState, amount: u256) -> bool;
+    fn get_stake_balance(self: @TContractState) -> u256;
 }
 
 #[starknet::contract]
@@ -100,7 +101,7 @@ mod BWCStakingContract {
         self.receipt_token_address.write(receipt_token_address);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl IStakeImpl of super::IStake<ContractState> {
         // Function allows caller to stake their token
         // @amount: Amount of token to stake
@@ -122,7 +123,7 @@ mod BWCStakingContract {
             assert(
                 amount <= bwc_erc20_contract.balance_of(caller), Errors::INSUFFICIENT_FUNDS
             ); // Caller cannot stake more than token balance
-            assert(amount >= 0, Errors::ZERO_AMOUNT); // Cannot stake zero amount
+            assert(amount > 0, Errors::ZERO_AMOUNT); // Cannot stake zero amount
             assert(
                 receipt_contract.balance_of(address_this) >= amount, Errors::LOW_CBWCRT_BALANCE
             ); // Contract must have enough receipt token to transfer out
@@ -163,6 +164,10 @@ mod BWCStakingContract {
                     )
                 );
             true
+        }
+
+        fn get_stake_balance(self: @ContractState) -> u256 {
+            self.staker.read(get_caller_address()).amount
         }
 
         // Function allows caller to withdraw their staked token and get rewarded
@@ -233,7 +238,7 @@ mod BWCStakingContract {
         }
     }
 
-    #[external(v0)]
+
     #[generate_trait]
     impl Utility of UtilityTrait {
         // fn calculate_reward(self: ContractState, account: ContractAddress) -> u256 {
@@ -271,11 +276,11 @@ mod BWCStakingContract {
         }
     }
 }
-
 // TODO: 
 // 1. Make error messages more descriptive
 // 2. Add a util function to check if user has staked at any point in time
 // 3. Add a util function to check amount a user staked
 // 4. Convert non-custom errors to custom errors
 // 5. Add util function to check the last time a user staked
+
 
