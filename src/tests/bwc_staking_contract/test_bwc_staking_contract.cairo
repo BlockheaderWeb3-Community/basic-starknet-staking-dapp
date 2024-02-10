@@ -225,6 +225,32 @@ fn test_transfer_receipt_token(){
     stop_prank(CheatTarget::One(staking_contract_address));
 }
 
+#[test]
+#[should_panic(expected: ('Withdraw amount not allowed',))]
+fn test_invalid_withdrawal_amount() {
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    stake_dispatcher.withdraw(30);
+}
 
 
 
@@ -261,8 +287,9 @@ mod Account {
         const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
         const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
         const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
-        const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
+        const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'Withdraw amount not allowed';
         const WRONG_STAKE_BALANCE: felt252 = 'STAKE: Wrong stake balance';
          const INVALID_BALANCE: felt252 = 'Invalid balance';
                const INVALID_ALLOWANCE: felt252 = 'Invalid allowance';
+
     }
