@@ -196,6 +196,36 @@ fn test_transfer_stake_token(){
 }
 
 
+#[test]
+fn test_transfer_receipt_token(){
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let prev_stake_contract_receipt_token_balance: u256 = receipt_dispatcher.balance_of(staking_contract_address);
+    let prev_staker_receipt_token_balance: u256 = receipt_dispatcher.balance_of(Account::user1());
+
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    assert(receipt_dispatcher.balance_of(Account::user1())  == prev_staker_receipt_token_balance + 6 , Errors::INVALID_BALANCE);
+    stop_prank(CheatTarget::One(staking_contract_address));
+}
+
+
 
 
 
