@@ -4,13 +4,13 @@ use core::result::ResultTrait;
 use core::option::OptionTrait;
 use basic_staking_dapp::bwc_staking_contract::{IStake, BWCStakingContract, IStakeDispatcher};
 use basic_staking_dapp::erc20_token::{IERC20, ERC20, IERC20Dispatcher};
-use starknet::ContractAddress;
+use starknet::{ContractAddress, get_block_timestamp};
 use starknet::contract_address::contract_address_const;
 use core::array::ArrayTrait;
-use snforge_std::{declare, ContractClassTrait, fs::{FileTrait, read_txt}};
-use snforge_std::{start_prank, stop_prank, CheatTarget};
-
-use snforge_std::PrintTrait;
+use snforge_std::{
+    declare, ContractClassTrait, fs::{FileTrait, read_txt}, start_prank, stop_prank, CheatTarget,
+    start_warp, PrintTrait
+};
 use core::traits::{Into, TryInto};
 use starknet::syscalls::deploy_syscall;
 use starknet::SyscallResultTrait;
@@ -166,9 +166,329 @@ fn test_new_stake_detail_balance() {
     assert(stake_dispatcher.get_stake_balance() == (prev_stake + 6), Errors::WRONG_STAKE_BALANCE);
 }
 
+#[test]
+fn test_transfer_stake_token() {
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let prev_stake_contract_balance = bwc_dispatcher.balance_of(staking_contract_address);
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+
+    assert(
+        bwc_dispatcher.allowance(Account::user1(), staking_contract_address) == 4,
+        Errors::INVALID_ALLOWANCE
+    );
+    assert(
+        bwc_dispatcher.balance_of(staking_contract_address) == prev_stake_contract_balance + 6,
+        Errors::INVALID_BALANCE
+    );
+    stop_prank(CheatTarget::One(staking_contract_address));
+}
 
 
+#[test]
+fn test_transfer_receipt_token() {
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let prev_stake_contract_receipt_token_balance: u256 = receipt_dispatcher
+        .balance_of(staking_contract_address);
+    let prev_staker_receipt_token_balance: u256 = receipt_dispatcher.balance_of(Account::user1());
 
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    assert(
+        receipt_dispatcher.balance_of(Account::user1()) == prev_staker_receipt_token_balance + 6,
+        Errors::INVALID_BALANCE
+    );
+    stop_prank(CheatTarget::One(staking_contract_address));
+}
+
+#[test]
+#[should_panic(expected: ('Withdraw amount not allowed',))]
+fn test_invalid_withdrawal_amount() {
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    stake_dispatcher.withdraw(30);
+}
+
+
+#[test]
+#[should_panic(expected: ('Not yet time to withdraw',))]
+fn test_invalid_withdraw_time() {
+    let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    stake_dispatcher.withdraw(5);
+}
+
+#[test]
+#[should_panic(expected: ('Not enough reward token to send',))]
+fn test_insufficient_reward_token() {
+    let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    start_warp(CheatTarget::One(staking_contract_address), get_block_timestamp() + 240);
+    stake_dispatcher.withdraw(5);
+}
+
+#[test]
+fn test_sufficient_bwc_token_for_withdraw() {
+    let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+    start_warp(CheatTarget::One(staking_contract_address), get_block_timestamp() + 240);
+    assert(bwc_dispatcher.balance_of(staking_contract_address) >= 6, Errors::INVALID_BALANCE);
+}
+
+#[test]
+fn test_sufficient_receipt_token_allowance_for_withdraw() {
+    let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::user1());
+    receipt_dispatcher.approve(staking_contract_address, 6);
+    assert(
+        receipt_dispatcher.allowance(Account::user1(), staking_contract_address) >= 6,
+        Errors::INSUFFICIENT_BALANCE
+    );
+}
+
+#[test]
+#[should_panic(expected: ('receipt tkn allowance too low',))]
+fn test_insufficient_receipt_token_allowance_for_withdraw() {
+    let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(reward_contract_address), Account::admin());
+    reward_dispatcher.transfer(staking_contract_address, 50);
+    stop_prank(CheatTarget::One(reward_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+
+    start_warp(CheatTarget::One(staking_contract_address), get_block_timestamp() + 240);
+    stake_dispatcher.withdraw(6);
+}
+
+
+#[test]
+fn test_withdraw() {
+    let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(reward_contract_address), Account::admin());
+    reward_dispatcher.transfer(staking_contract_address, 50);
+    stop_prank(CheatTarget::One(reward_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(6);
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::user1());
+    receipt_dispatcher.approve(staking_contract_address, 6);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_warp(CheatTarget::One(staking_contract_address), get_block_timestamp() + 240);
+    stake_dispatcher.withdraw(6);
+
+    // Test that staker stake balance has been updated
+    assert(stake_dispatcher.get_stake_balance() == 0, Errors::INVALID_BALANCE);
+
+    // Test that receipt tokens have removed from staker balance
+    assert(receipt_dispatcher.balance_of(Account::user1()) == 0, Errors::INVALID_BALANCE);
+
+    // Test that reciept tokens have been returned to staking contract
+    assert(receipt_dispatcher.balance_of(staking_contract_address) == 20, Errors::INVALID_BALANCE);
+
+    // Test that reward token has been sent to the staker
+    assert(reward_dispatcher.balance_of(Account::user1()) == 6, Errors::INVALID_BALANCE);
+
+    // Test that stake token has been sent to the staker
+    assert(bwc_dispatcher.balance_of(Account::user1()) == 35, Errors::INVALID_BALANCE);
+}
 
 
 mod Account {
@@ -188,20 +508,22 @@ mod Account {
 }
 
 
-   /////////////////
-    //CUSTOM ERRORS
-    /////////////////
-    mod Errors {
-        const INSUFFICIENT_FUND: felt252 = 'STAKE: Insufficient fund';
-        const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
-        const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
-        const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
-        const ZERO_AMOUNT: felt252 = 'STAKE: Zero amount';
-        const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
-        const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
-        const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
-        const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
-        const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
-        const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
-        const WRONG_STAKE_BALANCE: felt252 = 'STAKE: Wrong stake balance';
-    }
+/////////////////
+//CUSTOM ERRORS
+/////////////////
+mod Errors {
+    const INSUFFICIENT_FUND: felt252 = 'STAKE: Insufficient fund';
+    const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
+    const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
+    const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
+    const ZERO_AMOUNT: felt252 = 'STAKE: Zero amount';
+    const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
+    const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
+    const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
+    const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
+    const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
+    const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'Withdraw amount not allowed';
+    const WRONG_STAKE_BALANCE: felt252 = 'STAKE: Wrong stake balance';
+    const INVALID_BALANCE: felt252 = 'Invalid balance';
+    const INVALID_ALLOWANCE: felt252 = 'Invalid allowance';
+}
