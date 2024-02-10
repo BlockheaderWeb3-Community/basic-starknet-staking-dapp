@@ -87,7 +87,7 @@ mod BWCStakingContract {
         const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
         const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
         const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
-         const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'Withdraw amount not allowed';
+        const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'Withdraw amount not allowed';
     }
 
     #[constructor]
