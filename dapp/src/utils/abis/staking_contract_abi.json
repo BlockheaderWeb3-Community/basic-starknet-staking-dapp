@@ -1,0 +1,179 @@
+[
+    {
+      "type": "impl",
+      "name": "IStakeImpl",
+      "interface_name": "basic_staking_dapp::bwc_staking_contract::IStake"
+    },
+    {
+      "type": "struct",
+      "name": "core::integer::u256",
+      "members": [
+        {
+          "name": "low",
+          "type": "core::integer::u128"
+        },
+        {
+          "name": "high",
+          "type": "core::integer::u128"
+        }
+      ]
+    },
+    {
+      "type": "enum",
+      "name": "core::bool",
+      "variants": [
+        {
+          "name": "False",
+          "type": "()"
+        },
+        {
+          "name": "True",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "interface",
+      "name": "basic_staking_dapp::bwc_staking_contract::IStake",
+      "items": [
+        {
+          "type": "function",
+          "name": "stake",
+          "inputs": [
+            {
+              "name": "amount",
+              "type": "core::integer::u256"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "withdraw",
+          "inputs": [
+            {
+              "name": "amount",
+              "type": "core::integer::u256"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::bool"
+            }
+          ],
+          "state_mutability": "external"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "is_time_to_withdraw",
+      "inputs": [
+        {
+          "name": "stake_time",
+          "type": "core::integer::u64"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "core::bool"
+        }
+      ],
+      "state_mutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "get_next_withdraw_time",
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "core::integer::u64"
+        }
+      ],
+      "state_mutability": "view"
+    },
+    {
+      "type": "constructor",
+      "name": "constructor",
+      "inputs": [
+        {
+          "name": "bwcerc20_token_address",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "receipt_token_address",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "reward_token_address",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "basic_staking_dapp::bwc_staking_contract::BWCStakingContract::TokenStaked",
+      "kind": "struct",
+      "members": [
+        {
+          "name": "staker",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "data"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u256",
+          "kind": "data"
+        },
+        {
+          "name": "time",
+          "type": "core::integer::u64",
+          "kind": "data"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "basic_staking_dapp::bwc_staking_contract::BWCStakingContract::TokenWithdraw",
+      "kind": "struct",
+      "members": [
+        {
+          "name": "staker",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "data"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u256",
+          "kind": "data"
+        },
+        {
+          "name": "time",
+          "type": "core::integer::u64",
+          "kind": "data"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "basic_staking_dapp::bwc_staking_contract::BWCStakingContract::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "TokenStaked",
+          "type": "basic_staking_dapp::bwc_staking_contract::BWCStakingContract::TokenStaked",
+          "kind": "nested"
+        },
+        {
+          "name": "TokenWithdraw",
+          "type": "basic_staking_dapp::bwc_staking_contract::BWCStakingContract::TokenWithdraw",
+          "kind": "nested"
+        }
+      ]
+    }
+  ]
