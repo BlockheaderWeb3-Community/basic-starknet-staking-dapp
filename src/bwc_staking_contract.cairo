@@ -79,14 +79,20 @@ mod BWCStakingContract {
         const INSUFFICIENT_FUND: felt252 = 'STAKE: Insufficient fund';
         const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
         const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
-        const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
+        const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not a token address';
         const ZERO_AMOUNT: felt252 = 'STAKE: Zero amount';
         const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
-        const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
-        const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
+        const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low receipt_tkn';
+        const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdrawal time';
         const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
         const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
         const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
+        const WITHDRAW_AMT_LESS: felt252 = 'Withdraw amt > stake amt';
+        const NOT_WITHDRAWAL_TIME: felt252 = 'Not yet time to withdraw';
+        const LOW_REWARD_TKN: felt252 = 'low reward tkn to send';
+        const LOW_BWC_TKN: felt252 = 'Not enough BWC token to send';
+        const LOW_RECEIPT_TKN_ALLOW: felt252 = 'receipt tkn allowance too low';
+        const CALLER_ADDRS_ZERO: felt252 = 'caller can not be addrs 0';
     }
 
     #[constructor]
@@ -195,20 +201,18 @@ mod BWCStakingContract {
             let stake_time = stake.time_staked;
 
             assert(
-                amount <= stake_amount, 'Withdraw amt > than stake amt'
+                amount <= stake_amount, Errors::WITHDRAW_AMT_LESS
             ); // Staker cannot withdraw more than staked amount
-            assert(self.is_time_to_withdraw(stake_time), 'Not yet time to withdraw');
+            assert(self.is_time_to_withdraw(stake_time), Errors::NOT_WITHDRAWAL_TIME);
             assert(
-                reward_contract.balance_of(address_this) >= amount,
-                'Not enough reward token to send'
-            ); // This contract must have enough reward token to transfer to Staker
+                reward_contract.balance_of(address_this) >= amount, Errors::LOW_REWARD_TKN); // This contract must have enough reward token to transfer to Staker
             assert(
                 bwc_erc20_contract.balance_of(address_this) >= amount,
-                'Not enough BWC token to send'
+                Errors::LOW_BWC_TKN
             ); // This contract must have enough stake token to transfer back to Staker
             assert(
                 receipt_contract.allowance(caller, address_this) >= amount,
-                'receipt tkn allowance too low'
+                Errors::LOW_RECEIPT_TKN_ALLOW
             ); // Staker has approved this contract to withdraw receipt token from Staker's account
 
             // Update stake detail
