@@ -167,10 +167,6 @@ fn test_new_stake_detail_balance() {
 }
 
 
-
-
-
-
 mod Account {
     use starknet::ContractAddress;
     use core::traits::TryInto;
@@ -188,20 +184,20 @@ mod Account {
 }
 
 
-   /////////////////
-    //CUSTOM ERRORS
-    /////////////////
-    mod Errors {
-        const INSUFFICIENT_FUND: felt252 = 'STAKE: Insufficient fund';
-        const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
-        const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
-        const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
-        const ZERO_AMOUNT: felt252 = 'STAKE: Zero amount';
-        const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
-        const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
-        const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
-        const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
-        const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
-        const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
-        const WRONG_STAKE_BALANCE: felt252 = 'STAKE: Wrong stake balance';
-    }
+/////////////////
+//CUSTOM ERRORS
+/////////////////
+mod Errors {
+    const INSUFFICIENT_FUND: felt252 = 'STAKE: Insufficient fund';
+    const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
+    const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
+    const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
+    const ZERO_AMOUNT: felt252 = 'STAKE: Zero amount';
+    const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
+    const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
+    const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
+    const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
+    const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
+    const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
+    const WRONG_STAKE_BALANCE: felt252 = 'STAKE: Wrong stake balance';
+}
