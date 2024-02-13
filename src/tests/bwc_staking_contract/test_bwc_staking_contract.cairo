@@ -323,6 +323,16 @@ fn test_withraw_with_addr_zero() {
     stake_dispatcher.withdraw(1);
 }
 
+#[test]
+#[should_panic(expected: ('Zero amount',))]
+fn test_withraw_with_zero_amount() {
+ let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.withdraw(0);
+}
+
 
 #[test]
 #[should_panic(expected: ('Withdraw amount not allowed',))]
@@ -611,7 +621,7 @@ mod Errors {
     const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
     const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
     const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
-    const ZERO_AMOUNT: felt252 = 'Address zero not allowed';
+    const ZERO_AMOUNT: felt252 = 'Zero amount';
     const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
     const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
     const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';

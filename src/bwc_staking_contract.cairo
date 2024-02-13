@@ -84,7 +84,7 @@ mod BWCStakingContract {
         const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
         const ADDRESS_ZERO: felt252 = 'Address zero not allowed';
         const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
-        const ZERO_AMOUNT: felt252 = 'STAKE: Zero amount';
+        const ZERO_AMOUNT: felt252 = 'Zero amount';
         const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
         const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
         const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
@@ -204,7 +204,7 @@ mod BWCStakingContract {
             let stake_time = stake.time_staked;
 
             assert(!caller.is_zero(), Errors::ADDRESS_ZERO); // Caller cannot be address 0
-
+            assert(amount > 0, Errors::ZERO_AMOUNT);
             assert(
                 amount <= stake_amount, Errors::WITHDRAW_AMOUNT_NOT_ALLOWED
             ); // Staker cannot withdraw more than staked amount
