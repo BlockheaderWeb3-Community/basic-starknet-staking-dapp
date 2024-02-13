@@ -5,6 +5,9 @@ trait IStake<TContractState> {
     fn stake(ref self: TContractState, amount: u256) -> bool;
     fn withdraw(ref self: TContractState, amount: u256) -> bool;
     fn get_stake_balance(self: @TContractState) -> u256;
+    fn get_bwc_token_address(self: @TContractState) -> ContractAddress;
+    fn get_reward_token_address(self: @TContractState) -> ContractAddress;
+    fn get_receipt_token_address(self: @TContractState) -> ContractAddress;
 }
 
 #[starknet::contract]
@@ -79,7 +82,7 @@ mod BWCStakingContract {
         const INSUFFICIENT_FUND: felt252 = 'STAKE: Insufficient fund';
         const INVALID_WITHDRAW_TIME: felt252 = 'Not yet time to withdraw';
         const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
-        const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
+        const ADDRESS_ZERO: felt252 = 'Address zero not allowed';
         const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
         const ZERO_AMOUNT: felt252 = 'STAKE: Zero amount';
         const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
@@ -121,10 +124,11 @@ mod BWCStakingContract {
             };
 
             assert(!caller.is_zero(), Errors::ADDRESS_ZERO); // Caller cannot be address 0
+            assert(amount > 0, Errors::ZERO_AMOUNT); // Cannot stake zero amount
             assert(
                 amount <= bwc_erc20_contract.balance_of(caller), Errors::INSUFFICIENT_FUNDS
             ); // Caller cannot stake more than token balance
-            assert(amount > 0, Errors::ZERO_AMOUNT); // Cannot stake zero amount
+            
             assert(
                 receipt_contract.balance_of(address_this) >= amount, Errors::LOW_CBWCRT_BALANCE
             ); // Contract must have enough receipt token to transfer out
@@ -190,12 +194,16 @@ mod BWCStakingContract {
                 contract_address: self.reward_token_address.read()
             };
 
+            
+
             // get stake details
             let mut stake: StakeDetail = self.staker.read(caller);
             // get amount caller has staked
             let stake_amount = stake.amount;
             // get last timestamp caller staked
             let stake_time = stake.time_staked;
+
+            assert(!caller.is_zero(), Errors::ADDRESS_ZERO); // Caller cannot be address 0
 
             assert(
                 amount <= stake_amount, Errors::WITHDRAW_AMOUNT_NOT_ALLOWED
@@ -238,6 +246,19 @@ mod BWCStakingContract {
                     Event::TokenWithdraw(TokenWithdraw { staker: caller, amount, time: stake_time })
                 );
             true
+        }
+
+        fn get_bwc_token_address(self: @ContractState) -> ContractAddress {
+            self.bwcerc20_token_address.read()
+        }
+
+        fn get_reward_token_address(self: @ContractState) -> ContractAddress {
+            self.reward_token_address.read()
+        }
+
+
+        fn get_receipt_token_address(self: @ContractState) -> ContractAddress {
+            self.receipt_token_address.read()
         }
     }
 

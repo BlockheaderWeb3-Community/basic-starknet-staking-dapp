@@ -9,11 +9,11 @@ use starknet::contract_address::contract_address_const;
 use core::array::ArrayTrait;
 use snforge_std::{
     declare, ContractClassTrait, fs::{FileTrait, read_txt}, start_prank, stop_prank, CheatTarget,
-    start_warp, PrintTrait
+    start_warp, PrintTrait, spy_events, SpyOn, EventSpy, EventFetcher,
+    event_name_hash, Event
 };
 use core::traits::{Into, TryInto};
-use starknet::syscalls::deploy_syscall;
-use starknet::SyscallResultTrait;
+
 
 const bwc_erc_name_: felt252 = 'BWCToken';
 const bwc_erc_symbol_: felt252 = 'BWC20';
@@ -26,6 +26,7 @@ const receipt_erc_decimals_: u8 = 18_u8;
 const reward_erc_name_: felt252 = 'BWCReceiptToken';
 const reward_erc_symbol_: felt252 = 'cBWC20';
 const reward_erc_decimals_: u8 = 18_u8;
+
 
 
 fn deploy_contract() -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress) {
@@ -61,6 +62,63 @@ fn deploy_contract() -> (ContractAddress, ContractAddress, ContractAddress, Cont
     )
 }
 
+
+#[test]
+fn test_constructor() {
+    let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let staking_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    assert(
+        staking_dispatcher.get_bwc_token_address() == bwc_contract_address,
+        Errors::CONSTRUCTOR_ERROR
+    );
+    assert(
+        staking_dispatcher.get_receipt_token_address() == receipt_contract_address,
+        Errors::CONSTRUCTOR_ERROR
+    );
+    assert(
+        staking_dispatcher.get_reward_token_address() == reward_contract_address,
+        Errors::CONSTRUCTOR_ERROR
+    );
+}
+
+
+#[test]
+#[should_panic(expected: ('STAKE: Address zero',))]
+fn test_caller_not_zero(){
+    let (staking_contract_address, _, _, _) = deploy_contract();
+    let dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::zero());
+    dispatcher.stake(200);
+}
+
+#[test]
+#[should_panic(expected: ('STAKE: Zero amount',))]
+fn test_cannot_stake_zero() {
+    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    stake_dispatcher.stake(0);
+}
+
 #[test]
 #[should_panic(expected: ('STAKE: Insufficient funds',))]
 fn test_stake_insufficient_funds() {
@@ -92,27 +150,6 @@ fn test_stake_low_cbwc() {
     stake_dispatcher.stake(30);
 }
 
-#[test]
-#[should_panic(expected: ('STAKE: Zero amount',))]
-fn test_cannot_stake_zero() {
-    let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
-        deploy_contract();
-    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
-    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
-    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
-
-    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
-    bwc_dispatcher.transfer(Account::user1(), 35);
-    stop_prank(CheatTarget::One(bwc_contract_address));
-
-    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
-    receipt_dispatcher.transfer(staking_contract_address, 20);
-    stop_prank(CheatTarget::One(receipt_contract_address));
-
-    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
-    stake_dispatcher.stake(0);
-}
-
 
 #[test]
 #[should_panic(expected: ('STAKE: Amount not allowed',))]
@@ -141,7 +178,7 @@ fn test_amount_not_allowed() {
 
 
 #[test]
-fn test_new_stake_detail_balance() {
+fn test_update_stake_detail_balance() {
     let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
         deploy_contract();
     let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
@@ -174,6 +211,7 @@ fn test_transfer_stake_token() {
     let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
     let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
     let prev_stake_contract_balance = bwc_dispatcher.balance_of(staking_contract_address);
+    let prev_allowance = bwc_dispatcher.allowance(Account::user1(), staking_contract_address);
 
     start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
     bwc_dispatcher.transfer(Account::user1(), 35);
@@ -191,7 +229,7 @@ fn test_transfer_stake_token() {
     stake_dispatcher.stake(6);
 
     assert(
-        bwc_dispatcher.allowance(Account::user1(), staking_contract_address) == 4,
+        bwc_dispatcher.allowance(Account::user1(), staking_contract_address) == prev_allowance + 10 - 6,
         Errors::INVALID_ALLOWANCE
     );
     assert(
@@ -233,6 +271,58 @@ fn test_transfer_receipt_token() {
     );
     stop_prank(CheatTarget::One(staking_contract_address));
 }
+
+#[test]
+fn test_token_staked_event_fired(){
+    let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    let mut spy = spy_events(SpyOn::One(staking_contract_address));
+    stake_dispatcher.stake(6);
+
+
+
+   spy.fetch_events();
+
+    assert(spy.events.len() == 1, 'There should be one event');
+
+    let (from, event) = spy.events.at(0);
+    assert(from == @staking_contract_address, 'Emitted from wrong address');
+    assert(event.keys.at(0) == @event_name_hash('TokenStaked'), 'Wrong event name');
+}
+
+#[test]
+#[should_panic(expected: ('Address zero not allowed',))]
+fn test_withraw_with_addr_zero() {
+ let (staking_contract_address, bwc_contract_address, receipt_contract_address, _) =
+        deploy_contract();
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    start_prank(CheatTarget::One(staking_contract_address), Account::zero());
+    stake_dispatcher.withdraw(1);
+}
+
 
 #[test]
 #[should_panic(expected: ('Withdraw amount not allowed',))]
@@ -492,7 +582,8 @@ fn test_withdraw() {
 
 
 mod Account {
-    use starknet::ContractAddress;
+    use core::option::OptionTrait;
+use starknet::ContractAddress;
     use core::traits::TryInto;
 
     fn user1() -> ContractAddress {
@@ -505,6 +596,10 @@ mod Account {
     fn admin() -> ContractAddress {
         'admin'.try_into().unwrap()
     }
+
+    fn zero() -> ContractAddress {
+        0x0000000000000000000000000000000000000000.try_into().unwrap()
+    }
 }
 
 
@@ -516,7 +611,7 @@ mod Errors {
     const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
     const ADDRESS_ZERO: felt252 = 'STAKE: Address zero';
     const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
-    const ZERO_AMOUNT: felt252 = 'STAKE: Zero amount';
+    const ZERO_AMOUNT: felt252 = 'Address zero not allowed';
     const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
     const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
     const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
@@ -526,4 +621,5 @@ mod Errors {
     const WRONG_STAKE_BALANCE: felt252 = 'STAKE: Wrong stake balance';
     const INVALID_BALANCE: felt252 = 'Invalid balance';
     const INVALID_ALLOWANCE: felt252 = 'Invalid allowance';
+    const CONSTRUCTOR_ERROR: felt252 = 'Constructor error in deployment';
 }
