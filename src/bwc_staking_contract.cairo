@@ -128,7 +128,7 @@ mod BWCStakingContract {
             assert(
                 amount <= bwc_erc20_contract.balance_of(caller), Errors::INSUFFICIENT_FUNDS
             ); // Caller cannot stake more than token balance
-            
+
             assert(
                 receipt_contract.balance_of(address_this) >= amount, Errors::LOW_CBWCRT_BALANCE
             ); // Contract must have enough receipt token to transfer out
@@ -193,8 +193,6 @@ mod BWCStakingContract {
             let reward_contract = IERC20Dispatcher {
                 contract_address: self.reward_token_address.read()
             };
-
-            
 
             // get stake details
             let mut stake: StakeDetail = self.staker.read(caller);
