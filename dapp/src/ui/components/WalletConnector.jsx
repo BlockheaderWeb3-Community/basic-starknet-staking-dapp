@@ -1,17 +1,34 @@
-function WalletConnector({connection, disconnectWallet, connectWallet}) {
+import { connect, disconnect } from "get-starknet";
+import { useConnectWallet } from "../../context/ConnectContext";
+import { connectWallet, disconnectWallet } from "../../api/ConnectAPI";
+
+
+function WalletConnector() {
+  const { dispatch, connection } = useConnectWallet();
+
+
+  async function onConnect() {
+    const response = await connectWallet(dispatch, connect);
+    if (!response) return;
+    // navigate("app/instructions");
+  }
+
+  async function onDisconnect() {
+    await disconnectWallet(dispatch, disconnect);
+  }
   return (
     <>
       {connection ? (
         <button
           className="px-6 rounded-[20px] py-3 bg-white font-bold text-sm text-[#121212] cursor-pointer"
-          onClick={disconnectWallet}
+          onClick={onDisconnect}
         >
           Disconnect
         </button>
       ) : (
         <button
           className="px-6 rounded-[20px] py-3 bg-white font-bold text-sm text-[#121212] cursor-pointer"
-          onClick={connectWallet}
+          onClick={onConnect}
         >
           Connect Wallet
         </button>

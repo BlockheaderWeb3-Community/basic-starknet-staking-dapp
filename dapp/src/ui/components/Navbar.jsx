@@ -3,7 +3,7 @@ import Logo from "./Logo";
 import NavigationLinks from "./NavigationLinks";
 import WalletConnector from "./WalletConnector";
 
-function Navbar({ connection, disconnectWallet, connectWallet, address }) {
+function Navbar() {
   return (
     <div className="fixed left-0 top-[33px] z-[30] w-screen px-[50px]">
       <nav
@@ -14,9 +14,6 @@ function Navbar({ connection, disconnectWallet, connectWallet, address }) {
         <Logo />
         <NavigationLinks />
         <WalletConnector
-          connection={connection}
-          disconnectWallet={disconnectWallet}
-          connectWallet={connectWallet}
         />
       </nav>
     </div>
