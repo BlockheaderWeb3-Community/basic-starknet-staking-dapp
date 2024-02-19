@@ -6,22 +6,18 @@ import { useOutletContext } from "react-router-dom";
 import {Contract} from 'starknet';
 import { bwcContractAddress } from "../helpers";
 import { bwcAbi } from "../utils";
+import { useConnectWallet } from "../context/ConnectContext";
 
 function FaucetPage() {
 
   const [step, setStep] = useState(false)
-  const [provider, address] = useOutletContext();
-
-  const writeContract = new Contract(bwcAbi, bwcContractAddress, provider);
-
+   const {address, account, bwc_contract, staking_contract} = useConnectWallet()
   const sendFaucet = async (recipient) => {
-    
     try {
-        const amount = 10
-
-        await writeContract.transfer(recipient, amount)
+        const amount = 30
+        bwc_contract.connect(staking_contract)
+        await bwc_contract.transfer(recipient, amount)
         setStep(true)
-        
     } catch (error) {
         alert(error.message)
         console.log(error)

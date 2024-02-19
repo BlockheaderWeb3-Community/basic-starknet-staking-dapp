@@ -6,7 +6,7 @@ function NavigationLinks() {
       <NavigationLink text={"Stake"} to={"/"} />
       <NavigationLink text={"Lend"} to={"/"} />
       <NavigationLink text={"Faucet"} to={"/faucet"} />
-      <NavigationLink text={"Portfolio"} to={"/portfolio"} />
+      <NavigationLink text={"Withdraw"} to={"/withdraw"} />
     </ul>
   );
 }
