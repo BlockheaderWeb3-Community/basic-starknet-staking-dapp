@@ -14,6 +14,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { AppLayout } from "./ui/layout";
 import PortfolioPage from "./pages/PortfolioPage";
 import FaucetPage from "./pages/FaucetPage";
+import WithdrawPage from "./pages/WithdrawPage";
 
 function App() {
   const router = createBrowserRouter([
@@ -26,8 +27,8 @@ function App() {
           element: <StakeContainer />,
         },
         {
-          path: "/portfolio",
-          element: <PortfolioPage />,
+          path: "/withdraw",
+          element: <WithdrawPage />,
         },
         {
           path: "/faucet",

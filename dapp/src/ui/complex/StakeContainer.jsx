@@ -9,19 +9,13 @@ function StakeContainer() {
   const [symbol, setSymbol] = useState("");
   const [bwcBalance, setBwcBalance] = useState("");
   const [amount, setAmount] = useState(0);
-
-
-  // const [provider, address] = useOutletContext();
   const {address, account, bwc_contract, staking_contract} = useConnectWallet()
 
   const getBalance = async () => {
     try{
-     console.log(bwc_contract)
-     // bwc_contract.connect(account);
      const balance = await bwc_contract.balance_of(address);
-     const big = new BigNumber(balance).shift(-18).toString()
+     const big = new BigNumber(balance).shift(-18).toFixed(2).toString()
      setBwcBalance(big)
-     console.log(big)
     }catch(err){
      console.log(err.message)
     }
@@ -75,14 +69,14 @@ function StakeContainer() {
         staking_contract.connect(account);
          await staking_contract.stake(big)
          setAmount(0)
-         getBalance()
+         await getBalance()
       }}>
         Stake
       </button>
       <div className="mt-[23px] flex flex-col gap-y-4">
         <DataROw title={"Current price"} value={"1BWC = 1RBWC"} />
         <DataROw title={"Commission"} value={"10%"} />
-        <DataROw title={"Reward"} value={"200TC"} />
+        <DataROw title={"Reward"} value={`${amount}RBWC`} />
       </div>
     </div>
   );
