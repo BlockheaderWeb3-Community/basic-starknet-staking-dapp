@@ -83,14 +83,18 @@ mod BWCStakingContract {
         const INVALID_WITHDRAW_TIME: felt252 = 'Not yet time to withdraw';
         const INSUFFICIENT_BALANCE: felt252 = 'STAKE: Insufficient balance';
         const ADDRESS_ZERO: felt252 = 'Address zero not allowed';
-        const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not token address';
+        const NOT_TOKEN_ADDRESS: felt252 = 'STAKE: Not a token address';
         const ZERO_AMOUNT: felt252 = 'Zero amount';
         const INSUFFICIENT_FUNDS: felt252 = 'STAKE: Insufficient funds';
-        const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low balance';
+        const LOW_CBWCRT_BALANCE: felt252 = 'STAKE: Low receipt_tkn_balance';
         const NOT_WITHDRAW_TIME: felt252 = 'STAKE: Not yet withdraw time';
         const LOW_CONTRACT_BALANCE: felt252 = 'STAKE: Low contract balance';
         const AMOUNT_NOT_ALLOWED: felt252 = 'STAKE: Amount not allowed';
         const WITHDRAW_AMOUNT_NOT_ALLOWED: felt252 = 'Withdraw amount not allowed';
+        const NOT_WITHDRAWAL_TIME: felt252 = 'Not yet time to withdraw';
+        const LOW_REWARD_TKN: felt252 = 'low reward tkn to send';
+        const LOW_BWC_TKN: felt252 = 'Not enough BWC token to send';
+        const LOW_RECEIPT_TKN_ALLOW: felt252 = 'low receipt tkn allowance';
     }
 
     #[constructor]
@@ -208,16 +212,14 @@ mod BWCStakingContract {
             ); // Staker cannot withdraw more than staked amount
             assert(self.is_time_to_withdraw(stake_time), Errors::INVALID_WITHDRAW_TIME);
             assert(
-                reward_contract.balance_of(address_this) >= amount,
-                'Not enough reward token to send'
+                reward_contract.balance_of(address_this) >= amount, Errors::LOW_REWARD_TKN
             ); // This contract must have enough reward token to transfer to Staker
             assert(
-                bwc_erc20_contract.balance_of(address_this) >= amount,
-                'Not enough BWC token to send'
+                bwc_erc20_contract.balance_of(address_this) >= amount, Errors::LOW_BWC_TKN
             ); // This contract must have enough stake token to transfer back to Staker
             assert(
                 receipt_contract.allowance(caller, address_this) >= amount,
-                'receipt tkn allowance too low'
+                Errors::LOW_RECEIPT_TKN_ALLOW
             ); // Staker has approved this contract to withdraw receipt token from Staker's account
 
             // Update stake detail
@@ -278,7 +280,10 @@ mod BWCStakingContract {
         // }
 
         fn is_time_to_withdraw(self: @ContractState, stake_time: u64) -> bool {
+            let caller = get_caller_address();
             let now = get_block_timestamp();
+            let stake: StakeDetail = self.staker.read(caller);
+            let stake_time: u64 = stake.time_staked;
             let withdraw_time = stake_time + MIN_TIME_BEFORE_WITHDRAW;
 
             if (now >= withdraw_time) {
@@ -288,13 +293,51 @@ mod BWCStakingContract {
             }
         }
 
+        //getting the next withdrawal time
         fn get_next_withdraw_time(self: @ContractState) -> u64 {
             let caller = get_caller_address();
             let stake: StakeDetail = self.staker.read(caller);
             let stake_time = stake.time_staked;
-            let next_stake_time = stake_time + MIN_TIME_BEFORE_WITHDRAW;
+            let next_withdrawal_time = stake_time + MIN_TIME_BEFORE_WITHDRAW;
+
+            next_withdrawal_time
+        }
+
+        //getting the next stake time:
+        fn get_next_stake_time(self: @ContractState) -> u64 {
+            let caller = get_caller_address();
+            let stake: StakeDetail = self.staker.read(caller);
+            let stake_time = stake.time_staked;
+            let next_stake_time: u64 = stake_time + MIN_TIME_BEFORE_WITHDRAW;
 
             next_stake_time
+        }
+
+        //checking if the user has staked before:
+        fn check_if_user_staked(self: @ContractState) -> bool {
+            let caller = get_caller_address();
+            let stake: StakeDetail = self.staker.read(caller);
+            let stake_status: bool = stake.status;
+
+            stake_status
+        }
+
+        //getting the amount a user staked:
+        fn get_stake_amount(self: @ContractState, amount: u256) -> u256 {
+            let caller = get_caller_address();
+            let stake: StakeDetail = self.staker.read(caller);
+            let stake_amount = stake.amount;
+
+            stake_amount
+        }
+
+        //checking the last time a user staked:
+        fn last_stake_time(self: @ContractState, stake_time: u64) -> u64 {
+            let caller = get_contract_address();
+            let stake: StakeDetail = self.staker.read(caller);
+            let stake_time = stake.time_staked;
+
+            stake_time
         }
     }
 }
