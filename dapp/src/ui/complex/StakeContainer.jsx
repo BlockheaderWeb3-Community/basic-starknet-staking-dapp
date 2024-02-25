@@ -9,7 +9,7 @@ function StakeContainer() {
   const [symbol, setSymbol] = useState("");
   const [bwcBalance, setBwcBalance] = useState("");
   const [amount, setAmount] = useState(0);
-  const {address, account, bwc_contract, staking_contract} = useConnectWallet()
+  const {address, account, bwc_contract, staking_contract, rpc_provider: provider} = useConnectWallet()
 
   const getBalance = async () => {
     try{
@@ -67,9 +67,10 @@ function StakeContainer() {
       <button className="mt-[48px] w-full rounded-[50px] bg-[#430F5D] py-[10px] text-center text-base font-black text-white" onClick={async ()=>{
         const big = new BigNumber(amount).shift(18).toString()
         staking_contract.connect(account);
-         await staking_contract.stake(big)
-         setAmount(0)
-         await getBalance()
+        const { transaction_hash: stakeTxHash } =  await staking_contract.stake(big)
+        await provider.waitForTransaction(stakeTxHash);
+        setAmount(0)
+        await getBalance()
       }}>
         Stake
       </button>
