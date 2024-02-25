@@ -2,23 +2,22 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import FaucetRequestContainer from "../ui/components/FaucetRequestContainer";
 import FaucetRequestModal from "../ui/complex/FaucetRequestModal";
-import { useOutletContext } from "react-router-dom";
-import {Contract} from 'starknet';
-import { bwcContractAddress } from "../helpers";
-import { bwcAbi } from "../utils";
 import { useConnectWallet } from "../context/ConnectContext";
 
 function FaucetPage() {
-
   const [step, setStep] = useState(false)
    const {address, account, faucet_contract} = useConnectWallet()
+   const [isFauceting, setIsFauceting] = useState(false)
   const sendFaucet = async () => {
     try {
+      setIsFauceting(true)
        faucet_contract.connect(account)
         await faucet_contract.request_bwc_token(address)
     } catch (error) {
         alert(error.message)
         console.log(error)
+    }finally{
+      setIsFauceting(false)
     }
 }
 
@@ -29,7 +28,7 @@ function FaucetPage() {
         This Faucet sends small amounts of Bwc to an account address on Starknet
         Bwc You can use it to pay transaction fee in Starknet.
       </p>
-      <FaucetRequestContainer sendFaucet={sendFaucet} />
+      <FaucetRequestContainer sendFaucet={sendFaucet} isFauceting={isFauceting}/>
 
       {/* {step && createPortal(<FaucetRequestModal setModal={setStep} />, document.body)} */}
     </div>

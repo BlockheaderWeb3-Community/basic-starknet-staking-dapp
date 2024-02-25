@@ -5,6 +5,7 @@ trait IStake<TContractState> {
     fn stake(ref self: TContractState, amount: u256) -> bool;
     fn withdraw(ref self: TContractState, amount: u256) -> bool;
     fn get_stake_balance(self: @TContractState) -> u256;
+    fn get_next_withdraw_time(self: @TContractState) -> u64;
     fn get_bwc_token_address(self: @TContractState) -> ContractAddress;
     fn get_reward_token_address(self: @TContractState) -> ContractAddress;
     fn get_receipt_token_address(self: @TContractState) -> ContractAddress;
@@ -173,6 +174,15 @@ mod BWCStakingContract {
 
         fn get_stake_balance(self: @ContractState) -> u256 {
             self.staker.read(get_caller_address()).amount
+        }
+
+        fn get_next_withdraw_time(self: @ContractState) -> u64 {
+             let caller = get_caller_address();
+            let stake: StakeDetail = self.staker.read(caller);
+            let stake_time = stake.time_staked;
+            let next_stake_time = stake_time + MIN_TIME_BEFORE_WITHDRAW;
+
+            next_stake_time - get_block_timestamp()
         }
 
 
