@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { useEffect, useState } from "react";
 import asset from "../../assets/solanaLogo.png";
 import { useNavigate } from "react-router-dom";
