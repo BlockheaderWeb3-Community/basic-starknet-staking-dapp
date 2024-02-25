@@ -1,16 +1,18 @@
+import BigNumber from "bignumber.js";
 import { useEffect, useState } from "react";
 import asset from "../../assets/solanaLogo.png";
 import { useNavigate } from "react-router-dom";
 import { useConnectWallet } from "../../context/ConnectContext";
 
 function OverviewContainer() {
-  const { address, staking_contract } = useConnectWallet();
+  const { address, staking_contract, account } = useConnectWallet();
   const navigate = useNavigate();
   const [stakeBalance, setStakeBalance] = useState("");
 
   // get_total_stake
   const getBalance = async () => {
     try {
+      staking_contract.connect(account)
       const balance = await staking_contract.get_stake_balance();
       const big = new BigNumber(balance).shift(-18).toFixed(2).toString();
       setStakeBalance(big);
