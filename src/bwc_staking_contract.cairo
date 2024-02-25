@@ -53,7 +53,6 @@ mod BWCStakingContract {
     /////////////////
     //EVENTS
     /////////////////
-
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -245,6 +244,7 @@ mod BWCStakingContract {
                 );
             true
         }
+
 
         fn get_bwc_token_address(self: @ContractState) -> ContractAddress {
             self.bwcerc20_token_address.read()
