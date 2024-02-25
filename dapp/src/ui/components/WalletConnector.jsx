@@ -1,6 +1,6 @@
-import { connect, disconnect } from "get-starknet";
 import { useConnectWallet } from "../../context/ConnectContext";
 import { connectWallet, disconnectWallet } from "../../api/ConnectAPI";
+import { connect, disconnect } from "get-starknet";
 
 
 function WalletConnector() {
@@ -10,7 +10,6 @@ function WalletConnector() {
   async function onConnect() {
     const response = await connectWallet(dispatch, connect);
     if (!response) return;
-    // navigate("app/instructions");
   }
 
   async function onDisconnect() {

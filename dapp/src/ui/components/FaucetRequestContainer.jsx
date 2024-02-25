@@ -1,9 +1,11 @@
 import coinLogo from "../../assets/solanaLogo.png";
 import arrDown from "../../assets/down-arrow.svg";
 import { useState } from "react";
+import { useConnectWallet } from "../../context/ConnectContext";
 
-function FaucetRequestContainer({sendFaucet}) {
-  const [address, setAddress] = useState("");
+function FaucetRequestContainer({sendFaucet, isFauceting}) {
+  const {address} = useConnectWallet()
+  const [value] = useState(address);
   return (
     <div className="shadow-shadowPrimary flex flex-col rounded-[5px] bg-white px-6 pb-10 pt-6">
       <h2 className="text-lg font-medium text-[#3a3a3a]">Account Address</h2>
@@ -17,16 +19,13 @@ function FaucetRequestContainer({sendFaucet}) {
         </button>
         <input
           type="text"
-          className="w-full rounded-[50px] border-[0.5px] border-solid border-[#c4c4c4] bg-white px-6 py-[19px] text-base font-bold text-black outline-none placeholder:text-[#3a3a3a]"
-          placeholder="0x0000.."
-          value={address}
-          onChange={(e) => {
-            setAddress(e.target.value);
-          }}
+          className="w-full rounded-[50px] border-[0.5px] disabled:cursor-not-allowed border-solid border-[#c4c4c4] bg-[#f5f5f5] px-6 py-[19px] text-base font-bold text-[#333]  outline-none placeholder:text-[#3a3a3a]"
+          disabled={true}
+          value={value.slice(0,32).concat("...")}
         />
       </div>
-      <button onClick={() => {sendFaucet(address)}} className="mt-[60px] self-center rounded-[50px] bg-[#430F5D] px-[172px] py-[10px]">
-        Send Request
+      <button onClick={() => {sendFaucet()}} disabled={isFauceting} className="mt-[60px] disabled:cursor-not-allowed self-center rounded-[50px] bg-[#430F5D] disabled:opacity-90 px-[172px] py-[10px]">
+        {isFauceting ? 'Sending tokens...' : "Send Request"}
       </button>
     </div>
   );

@@ -34,6 +34,10 @@ function App() {
           path: "/faucet",
           element: <FaucetPage />,
         },
+        {
+          path: "/portfolio",
+          element: <PortfolioPage />,
+        },
       ],
     },
   ]);

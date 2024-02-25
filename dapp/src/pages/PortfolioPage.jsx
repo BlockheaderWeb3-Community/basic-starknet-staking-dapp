@@ -10,9 +10,9 @@ function PortfolioPage() {
         <button className=" rounded-[40px] bg-white px-[30px] py-[10px] text-lg font-semibold transition-all duration-200 ease-in-out hover:bg-white hover:text-[#3a3a3a]">
           Overview
         </button>
-        <button className="rounded-[40px] bg-transparent  px-[30px] py-[10px] text-lg font-semibold text-white transition-all duration-300 ease-in-out hover:bg-white  hover:text-[#3a3a3a]">
+        {/* <button className="rounded-[40px] bg-transparent  px-[30px] py-[10px] text-lg font-semibold text-white transition-all duration-300 ease-in-out hover:bg-white  hover:text-[#3a3a3a]">
           Transcation history
-        </button>
+        </button> */}
       </div>
       <OverviewContainer />
     </div>
