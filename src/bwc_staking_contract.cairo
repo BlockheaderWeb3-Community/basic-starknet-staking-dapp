@@ -9,6 +9,7 @@ trait IStake<TContractState> {
     fn get_bwc_token_address(self: @TContractState) -> ContractAddress;
     fn get_reward_token_address(self: @TContractState) -> ContractAddress;
     fn get_receipt_token_address(self: @TContractState) -> ContractAddress;
+    fn get_total_stake(self: @TContractState) -> u256 ;
 }
 
 #[starknet::contract]
@@ -43,6 +44,7 @@ mod BWCStakingContract {
         bwcerc20_token_address: ContractAddress,
         receipt_token_address: ContractAddress,
         reward_token_address: ContractAddress,
+        total_staked: u256,
     }
 
     //////////////////
@@ -153,6 +155,10 @@ mod BWCStakingContract {
             // transfer stake token from caller to this contract
             bwc_erc20_contract.transfer_from(caller, address_this, amount);
 
+            //Increase the total staked
+            let previous_stake_total = self.total_staked.read();
+            self.total_staked.write(previous_stake_total + amount);
+
             // STEP 3
             // transfer receipt token from this contract to staker account
             receipt_contract.transfer(caller, amount);
@@ -183,6 +189,10 @@ mod BWCStakingContract {
             let next_stake_time = stake_time + MIN_TIME_BEFORE_WITHDRAW;
 
             next_stake_time - get_block_timestamp()
+        }
+
+        fn get_total_stake(self: @ContractState) -> u256 {
+            self.total_staked.read()
         }
 
 
@@ -247,6 +257,10 @@ mod BWCStakingContract {
 
             // Send back stake token to caller account
             bwc_erc20_contract.transfer(caller, amount);
+
+            //Decrease the total staked
+            let previous_stake_total = self.total_staked.read();
+            self.total_staked.write(previous_stake_total - amount);
 
             self
                 .emit(
