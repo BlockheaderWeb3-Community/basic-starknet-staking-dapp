@@ -57,7 +57,7 @@ const ConnectProvider = ({ children }) => {
   );
 
   const stakingContractAddress =
-  "0x018becc2b462707ceda5f99ef4402db26c84d8dd129c0c5a4868b1fcdcc6c523";
+  "0x2287a0d70a0d75a90b7bca5836187606b50ab61fe7e05d95a0556824de8041c";
   const bwcContractAddress = "0x03ae4482d3273f1e8117335b2985154c4b014e28028c2427ba67452756b61b85"
   const faucetContractAddress = "0x062a32c28e77d7ea584742d2522e9a5d02da4d261b1be4304d5c9b060b5e7533"
 
