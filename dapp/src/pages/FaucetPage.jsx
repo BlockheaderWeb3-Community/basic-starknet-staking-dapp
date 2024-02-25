@@ -11,7 +11,7 @@ import { useConnectWallet } from "../context/ConnectContext";
 function FaucetPage() {
 
   const [step, setStep] = useState(false)
-   const {address, account faucet_contract} = useConnectWallet()
+   const {address, account, faucet_contract} = useConnectWallet()
   const sendFaucet = async () => {
     try {
        faucet_contract.connect(account)
