@@ -11,13 +11,12 @@ import { useConnectWallet } from "../context/ConnectContext";
 function FaucetPage() {
 
   const [step, setStep] = useState(false)
-   const {address, account, bwc_contract, staking_contract} = useConnectWallet()
-  const sendFaucet = async (recipient) => {
+   const {address, account, bwc_contract, staking_contract, faucet_contract} = useConnectWallet()
+  const sendFaucet = async () => {
+    // console.log(fa)
     try {
-        const amount = 30
-        bwc_contract.connect(staking_contract)
-        await bwc_contract.transfer(recipient, amount)
-        setStep(true)
+       faucet_contract.connect(staking_contract.providerOrAccount)
+        await faucet_contract.request_bwc_token(address)
     } catch (error) {
         alert(error.message)
         console.log(error)
@@ -33,7 +32,7 @@ function FaucetPage() {
       </p>
       <FaucetRequestContainer sendFaucet={sendFaucet} />
 
-      {step && createPortal(<FaucetRequestModal setModal={setStep} />, document.body)}
+      {/* {step && createPortal(<FaucetRequestModal setModal={setStep} />, document.body)} */}
     </div>
   );
 }

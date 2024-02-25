@@ -3,6 +3,7 @@ import { createContext, useContext, useReducer } from "react";
 import { RpcProvider, Contract } from "starknet";
 import staking_contract_abi from '../utils/abis/staking_contract_abi.json'
 import bwc_token_abi from '../utils/abis/bwc_token_abi.json'
+import faucet_abi from '../utils/abis/faucet_abi.json'
 
 const ConnectContext = createContext();
 
@@ -57,12 +58,13 @@ const ConnectProvider = ({ children }) => {
 
   const stakingContractAddress =
   "0x018becc2b462707ceda5f99ef4402db26c84d8dd129c0c5a4868b1fcdcc6c523";
-
   const bwcContractAddress = "0x03ae4482d3273f1e8117335b2985154c4b014e28028c2427ba67452756b61b85"
+  const faucetContractAddress = "0x062a32c28e77d7ea584742d2522e9a5d02da4d261b1be4304d5c9b060b5e7533"
 
 const rpc_provider = new RpcProvider({ nodeUrl: 'https://starknet-goerli.g.alchemy.com/v2/cmootBfOhD5Yjs5hTaEY3hf5PlFabEO_' });
 const staking_contract = new Contract(staking_contract_abi, stakingContractAddress, rpc_provider)
 const bwc_contract = new Contract(bwc_token_abi, bwcContractAddress, rpc_provider)
+const faucet_contract = new Contract(faucet_abi, faucetContractAddress, rpc_provider)
 
   return (
     <ConnectContext.Provider
@@ -74,7 +76,8 @@ const bwc_contract = new Contract(bwc_token_abi, bwcContractAddress, rpc_provide
         loading,
         rpc_provider,
         staking_contract,
-        bwc_contract
+        bwc_contract,
+        faucet_contract
       }}
     >
       {children}
