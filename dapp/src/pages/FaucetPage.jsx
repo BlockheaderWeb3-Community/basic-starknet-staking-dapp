@@ -11,11 +11,10 @@ import { useConnectWallet } from "../context/ConnectContext";
 function FaucetPage() {
 
   const [step, setStep] = useState(false)
-   const {address, account, bwc_contract, staking_contract, faucet_contract} = useConnectWallet()
+   const {address, account faucet_contract} = useConnectWallet()
   const sendFaucet = async () => {
-    // console.log(fa)
     try {
-       faucet_contract.connect(staking_contract.providerOrAccount)
+       faucet_contract.connect(account)
         await faucet_contract.request_bwc_token(address)
     } catch (error) {
         alert(error.message)
