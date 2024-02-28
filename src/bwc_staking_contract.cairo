@@ -28,7 +28,7 @@ mod BWCStakingContract {
     //STAKING DETAIL
     /////////////////////
     // #[derive(Drop)]
-    #[derive(Copy, Drop, Serde, starknet::Store)]
+    #[derive(Copy, Drop)]
     struct StakeDetail {
         time_staked: u64,
         amount: u256,
