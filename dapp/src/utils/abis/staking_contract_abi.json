@@ -71,7 +71,12 @@
       {
         "type": "function",
         "name": "get_stake_balance",
-        "inputs": [],
+        "inputs": [
+          {
+            "name": "staker",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
         "outputs": [
           {
             "type": "core::integer::u256"

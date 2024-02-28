@@ -330,6 +330,38 @@ fn test_token_staked_event_fired() {
     assert(event.keys.at(0) == @event_name_hash('TokenStaked'), 'Wrong event name');
 }
 
+#[test]
+fn test_get_stake_balance(){
+     let (
+        staking_contract_address,
+        bwc_contract_address,
+        receipt_contract_address,
+        reward_contract_address
+    ) =
+        deploy_contract();
+    let receipt_dispatcher = IERC20Dispatcher { contract_address: receipt_contract_address };
+    let stake_dispatcher = IStakeDispatcher { contract_address: staking_contract_address };
+    let bwc_dispatcher = IERC20Dispatcher { contract_address: bwc_contract_address };
+    let reward_dispatcher = IERC20Dispatcher { contract_address: reward_contract_address };
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::admin());
+    bwc_dispatcher.transfer(Account::user1(), 35);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(receipt_contract_address), Account::admin());
+    receipt_dispatcher.transfer(staking_contract_address, 20);
+    stop_prank(CheatTarget::One(receipt_contract_address));
+
+    start_prank(CheatTarget::One(bwc_contract_address), Account::user1());
+    bwc_dispatcher.approve(staking_contract_address, 10);
+    stop_prank(CheatTarget::One(bwc_contract_address));
+
+    start_prank(CheatTarget::One(staking_contract_address), Account::user1());
+    let mut spy = spy_events(SpyOn::One(staking_contract_address));
+    stake_dispatcher.stake(6);
+    assert(stake_dispatcher.get_stake_balance() == 6, 'wrong' );
+} 
+
 
 //test that address zero can not withdraw
 #[test]

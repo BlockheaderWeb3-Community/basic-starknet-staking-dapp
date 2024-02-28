@@ -13,7 +13,7 @@ function OverviewContainer() {
   const getBalance = async () => {
     try {
       staking_contract.connect(account)
-      const balance = await staking_contract.get_stake_balance();
+      const balance = await staking_contract.get_stake_balance(account.address);
       const big = new BigNumber(balance).shift(-18).toFixed(2).toString();
       setStakeBalance(big);
     } catch (err) {
