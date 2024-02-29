@@ -24,16 +24,7 @@ mod BWCStakingContract {
     use basic_staking_dapp::erc20_token::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{ContractAddress, get_caller_address, get_contract_address, get_block_timestamp};
 
-    /////////////////////
-    //STAKING DETAIL
-    /////////////////////
-    // #[derive(Drop)]
-    #[derive(Copy, Drop, Serde, starknet::Store)]
-    struct StakeDetail {
-        time_staked: u64,
-        amount: u256,
-        status: bool,
-    }
+
 
     ////////////////////
     //STORAGE
@@ -45,6 +36,18 @@ mod BWCStakingContract {
         receipt_token_address: ContractAddress,
         reward_token_address: ContractAddress,
         total_staked: u256,
+    }
+
+
+    /////////////////////
+    //STAKING DETAIL
+    /////////////////////
+    // #[derive(Drop)]
+    #[derive(Copy, Drop, Serde, starknet::Store)]
+    struct StakeDetail {
+        time_staked: u64,
+        amount: u256,
+        status: bool,
     }
 
     //////////////////
