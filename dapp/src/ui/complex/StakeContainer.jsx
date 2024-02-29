@@ -35,6 +35,8 @@ function StakeContainer() {
     try {
       setIsStaking(true);
       const big = new BigNumber(amount).shift(18).toString();
+      bwc_contract.connect(account)
+      await  bwc_contract.approve("0x0418c48faa18849a7410844456d829b0393f0e981093f651700cb5ed6cca2700", big)
       staking_contract.connect(account);
       const { transaction_hash: stakeTxHash } =
         await staking_contract.stake(big);

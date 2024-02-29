@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 trait IStake<TContractState> {
     fn stake(ref self: TContractState, amount: u256) -> bool;
     fn withdraw(ref self: TContractState, amount: u256) -> bool;
-    fn get_stake_balance(self: @TContractState) -> u256;
+    fn get_stake_balance(self: @TContractState, staker: ContractAddress) -> u256;
     fn get_next_withdraw_time(self: @TContractState) -> u64;
     fn get_bwc_token_address(self: @TContractState) -> ContractAddress;
     fn get_reward_token_address(self: @TContractState) -> ContractAddress;
@@ -24,17 +24,6 @@ mod BWCStakingContract {
     use basic_staking_dapp::erc20_token::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{ContractAddress, get_caller_address, get_contract_address, get_block_timestamp};
 
-    /////////////////////
-    //STAKING DETAIL
-    /////////////////////
-    // #[derive(Drop)]
-    #[derive(Copy, Drop)]
-    struct StakeDetail {
-        time_staked: u64,
-        amount: u256,
-        status: bool,
-    }
-
     ////////////////////
     //STORAGE
     ////////////////////
@@ -45,6 +34,18 @@ mod BWCStakingContract {
         receipt_token_address: ContractAddress,
         reward_token_address: ContractAddress,
         total_staked: u256,
+    }
+
+
+    /////////////////////
+    //STAKING DETAIL
+    /////////////////////
+    // #[derive(Drop)]
+    #[derive(Copy, Drop, Serde, starknet::Store)]
+    struct StakeDetail {
+        time_staked: u64,
+        amount: u256,
+        status: bool,
     }
 
     //////////////////
@@ -178,12 +179,14 @@ mod BWCStakingContract {
             true
         }
 
-        fn get_stake_balance(self: @ContractState) -> u256 {
-            self.staker.read(get_caller_address()).amount
+        fn get_stake_balance(self: @ContractState,  staker: ContractAddress) -> u256 {
+            let mut stake: StakeDetail = self.staker.read(staker);
+            let stake_amount = stake.amount;
+            stake_amount
         }
 
         fn get_next_withdraw_time(self: @ContractState) -> u64 {
-             let caller = get_caller_address();
+            let caller = get_caller_address();
             let stake: StakeDetail = self.staker.read(caller);
             let stake_time = stake.time_staked;
             let next_stake_time = stake_time + MIN_TIME_BEFORE_WITHDRAW;
