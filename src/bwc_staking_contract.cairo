@@ -24,8 +24,6 @@ mod BWCStakingContract {
     use basic_staking_dapp::erc20_token::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{ContractAddress, get_caller_address, get_contract_address, get_block_timestamp};
 
-
-
     ////////////////////
     //STORAGE
     ////////////////////
