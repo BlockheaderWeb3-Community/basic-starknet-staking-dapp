@@ -209,11 +209,11 @@ fn test_update_stake_detail_balance() {
     stop_prank(CheatTarget::One(bwc_contract_address));
 
     start_prank(CheatTarget::One(staking_contract_address), Account::user1());
-    let prev_stake: u256 = stake_dispatcher.get_stake_balance();
+    let prev_stake: u256 = stake_dispatcher.get_stake_balance(Account::user1());
 
     //user1 stakes 6
     stake_dispatcher.stake(6);
-    assert(stake_dispatcher.get_stake_balance() == (prev_stake + 6), Errors::WRONG_STAKE_BALANCE);
+    assert(stake_dispatcher.get_stake_balance(Account::user1()) == (prev_stake + 6), Errors::WRONG_STAKE_BALANCE);
 }
 
 
@@ -359,7 +359,7 @@ fn test_get_stake_balance(){
     start_prank(CheatTarget::One(staking_contract_address), Account::user1());
     let mut spy = spy_events(SpyOn::One(staking_contract_address));
     stake_dispatcher.stake(6);
-    assert(stake_dispatcher.get_stake_balance() == 6, 'wrong' );
+    assert(stake_dispatcher.get_stake_balance(Account::user1()) == 6, 'wrong' );
 } 
 
 
@@ -635,7 +635,7 @@ fn test_withdraw() {
     stake_dispatcher.withdraw(6);
 
     // Test that staker stake balance has been updated
-    assert(stake_dispatcher.get_stake_balance() == 0, Errors::INVALID_BALANCE);
+    assert(stake_dispatcher.get_stake_balance(Account::user1()) == 0, Errors::INVALID_BALANCE);
 
     // Test that receipt tokens have removed from staker balance
     assert(receipt_dispatcher.balance_of(Account::user1()) == 0, Errors::INVALID_BALANCE);
