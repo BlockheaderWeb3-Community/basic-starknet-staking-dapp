@@ -15,6 +15,7 @@ import { AppLayout } from "./ui/layout";
 import PortfolioPage from "./pages/PortfolioPage";
 import FaucetPage from "./pages/FaucetPage";
 import WithdrawPage from "./pages/WithdrawPage";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   const router = createBrowserRouter([
@@ -24,6 +25,10 @@ function App() {
       children: [
         {
           index: true,
+          element: <Dashboard />
+        },
+        {
+          path: '/stake',
           element: <StakeContainer />,
         },
         {

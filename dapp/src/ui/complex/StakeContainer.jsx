@@ -90,8 +90,6 @@ function StakeContainer() {
       </button>
       <div className="mt-[23px] flex flex-col gap-y-4">
         <DataROw title={"Current price"} value={"1BWC = 1RBWC"} />
-        <DataROw title={"Commission"} value={"10%"} />
-        <DataROw title={"Reward"} value={`${amount}RBWC`} />
       </div>
     </div>
   );
